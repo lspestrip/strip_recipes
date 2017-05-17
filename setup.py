@@ -3,10 +3,7 @@
 '''A setuptools script to install strip_recipes
 '''
 
-from setuptools import setup, find_packages
-import os
-
-here = os.path.abspath(os.path.dirname(__file__))
+from setuptools import setup
 
 setup(
     name='strip_recipes',

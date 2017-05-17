@@ -44,7 +44,7 @@ TESTSET:
 
     def close(self):
         '''Close the recipe file.
-        
+
         Once this method is called, the recipe is ready to be used with
         the LSPE/Strip tester software.'''
 
