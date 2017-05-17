@@ -17,6 +17,7 @@ Python library to easily create complex recipes to be used with the LSPE/Strip
 tester software. All the Python control structures (if, while, for) can be used''',
     author='Maurizio Tomasi',
     author_email='maurizio.tomasi@unimiREMOVETHIS.it',
+    url='https://github.com/ziotom78/strip_recipes',
     license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',
