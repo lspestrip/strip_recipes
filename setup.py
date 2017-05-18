@@ -20,5 +20,7 @@ tester software. All the Python control structures (if, while, for) can be used'
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers'
     ],
-    keywords='cosmology laboratory'
+    keywords='cosmology laboratory',
+    test_suite='nose.collector',
+    tests_require=['nose']
 )
