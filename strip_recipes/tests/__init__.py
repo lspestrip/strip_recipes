@@ -19,7 +19,7 @@ class TestRecipeFile(TestCase):
         rec.record_start('TSYS')
         rec.record_stop()
 
-        rec.write_to_file(buf)
+        rec.write_to_file(buf, comment='Hello, world!')
 
         result = split_script(buf.getvalue())
         for idx, line in enumerate(result):
@@ -31,6 +31,9 @@ class TestRecipeFile(TestCase):
 
         expected = ['# num_of_operations = 2',
                     '# wait_duration_sec = 0',
+                    '# BEGIN_COMMENT',
+                    'Hello, world!',
+                    '# END_COMMENT',
                     'TESTSET:',
                     'RecordStart TSYS;',
                     'RecordStop ;']
