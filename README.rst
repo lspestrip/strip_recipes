@@ -33,7 +33,8 @@ passed to the commands to be put in the recipe file (e.g., it forbids negative t
 
 The following is a minimal working example which shows how the library should be used::
 
-.. highlight:: python
+.. code-block:: python
+
     from strip_recipes import RecipeFile
 
     recipe = RecipeFile()
@@ -59,6 +60,7 @@ The following is a minimal working example which shows how the library should be
     with open('recipe.txt', 'wt') as f:
         recipe.write_to_file(f)
 
+
 After the execution of the script, file ``recipe.txt`` will contain the following text::
 
     # generation_time = 2017-01-01T00:00:00Z
@@ -79,9 +81,11 @@ It is possible to record additional comments in the file. A smart way to do this
 include the source code of the Python file used to generate the program in the recipe
 itself::
 
-.. highlight:: python
+.. code-block:: python
+
     with open(__file__, 'rt') as f:
         this_script = f.readlines()
 
     with open('recipe.txt', 'wt') as f:
         recipe.write_to_file(f, comment=''.join(this_script))
+
