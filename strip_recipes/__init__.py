@@ -3,8 +3,10 @@
 '''Implementation of the ``RecipeFile`` class.'''
 
 from datetime import datetime
+from collections import namedtuple
+from typing import List, Union
 
-ERRMSG_FILEHANDLE_NOT_SET = 'file has not been created, you must call self.create_file()'
+RecipeOp = namedtuple('RecipeOp', ['operation', 'args'])
 
 class RecipeFile:
     '''A recipe file for the LSPE/Strip tester software.
@@ -17,38 +19,50 @@ class RecipeFile:
     ``open_recipe`` function.
     '''
 
-    def __init__(self, file_name: str):
+    def __init__(self):
         '''Create a new recipe file.
 
-        Initialize an empty recipe file with the specified file name. The object
-        is meant to be used within a "with" block, in order to properly open and
-        close the text file specified by "file_name".
+        Initialize an empty recipe file with the specified file name. After the
+        object has been created, you can use any of the following methods to
+        put commands in the recipe:
+           * ``sbs``, ``sbs_on``, ``sbs_off``
+           * ``record_start``, ``record_stop``
+           * ``bias_set``, ``pid_set``
+           * ``rf_start_sweep``, ``rf_cw``
+           * ``wait``
+
+        When the recipe is complete, use the method ``write_to_file`` to save the
+        recipe in a text file ready to be submitted to the Strip tester software.
         '''
 
-        self.file_name = file_name
-        self.instruction_idx = None
-        self.filehandle = None
+        self.operations = []  # type: List[RecipeOp]
 
-    def create_file(self):
+    def write_to_file(self, file_obj, comment=''):
         'Create the text file and set it up.'
 
-        self.filehandle = open(self.file_name, "wt")
-        self.instruction_idx = 0
-
         now = datetime.utcnow()
-        self.filehandle.write('''
-# Recipe generated on {date}
+        comment_lines = []
+        if comment != '':
+            comment_lines += ['# BEGIN_COMMENT', comment, '# END_COMMENT']
+
+        file_obj.write('''
+# generation_time = "{date}"
+# num_of_operations = {num}
+# wait_duration_sec = {wait_time}
+
+{comment}
 
 TESTSET:
-'''.format(date=now.strftime("%Y-%m-%d %H:%M:%S UTC")))
+'''.format(date=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+           num=len(self.operations),
+           wait_time=sum([x.args[0] for x in self.operations
+                          if x.operation.upper() == 'WAIT']),
+           comment='\n'.join(comment_lines)))
 
-    def close(self):
-        '''Close the recipe file.
-
-        Once this method is called, the recipe is ready to be used with
-        the LSPE/Strip tester software.'''
-
-        self.filehandle.close()
+        for cur_op in self.operations:
+            file_obj.write('{op} {args};\n'
+                           .format(op=cur_op.operation,
+                                   args=', '.join([str(x) for x in cur_op.args])))
 
     def load_settings(self, file_name: str, pol_id: int):
         '''Load bias values for a polarimeter from the specified file name.
@@ -58,17 +72,13 @@ TESTSET:
            * pol_id: the index (0-48) of the polarimeter
         '''
 
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
-
         assert isinstance(file_name, str)
         assert isinstance(pol_id, int)
 
         assert file_name != ''
         assert pol_id >= 0 and pol_id <= 48
 
-        self.filehandle.write('LoadSettings\t{file_name}, {pol_id};\n'
-                              .format(file_name=file_name, pol_id=pol_id))
-        self.instruction_idx += 1
+        self.operations.append(RecipeOp('LoadSettings', [file_name, pol_id]))
 
     def sbs(self, status: bool):
         '''Turn the bias board on or off.
@@ -78,13 +88,10 @@ TESTSET:
            * pol_id: the index (0-48) of the polarimeter
         '''
 
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
-
         assert isinstance(status, bool)
 
         status_str = {True: 'ON', False: 'OFF'}
-        self.filehandle.write('Sbs\t{0};\n'.format(status_str[status]))
-        self.instruction_idx += 1
+        self.operations.append(RecipeOp('Sbs', [status_str[status]]))
 
     def sbs_on(self):
         'Turn the bias board on.'
@@ -104,35 +111,25 @@ TESTSET:
            * ``name``: descriptive name for the test.
         '''
 
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
-
         assert isinstance(name, str)
         assert name != ''
 
-        self.filehandle.write('RecordStart\t{0};\n'.format(name))
-        self.instruction_idx += 1
+        self.operations.append(RecipeOp('RecordStart', [name]))
 
     def record_stop(self):
         'Stop recording operations.'
 
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
+        self.operations.append(RecipeOp('RecordStop', []))
 
-        self.filehandle.write('RecordStop;\n')
-        self.instruction_idx += 1
-
-    def bias_set(self, target: str, value: float):
+    def bias_set(self, target: str, value: Union[float, int]):
         '''Set a bias to some value.'''
-
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
 
         assert isinstance(target, str)
         assert isinstance(value, int) or isinstance(value, float)
 
-        self.filehandle.write('BiasSet\t{target}, {value};\n'
-                              .format(target=target, value=value))
-        self.instruction_idx += 1
+        self.operations.append(RecipeOp('BiasSet', [target, value]))
 
-    def pid_set(self, target: str, temperature: float):
+    def pid_set(self, target: str, temperature: Union[float, int]):
         '''Set the temperature of a PID.
 
         The four PIDs recognized by the program are:
@@ -143,19 +140,20 @@ TESTSET:
         Case is ignored.
         '''
 
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
-
         assert isinstance(target, str)
         assert isinstance(temperature, float) or isinstance(temperature, int)
 
         assert target.upper() in ['LA', 'LB', 'LCROSS', 'LPOL']
         assert temperature > 0.0
 
-        self.filehandle.write('PidSet\t{target}, {temperature};\n'
-                              .format(target=target, temperature=temperature))
-        self.instruction_idx += 1
+        self.operations.append(RecipeOp('PidSet', [target, temperature]))
 
-    def rf_start_sweep(self, fmin: float, fmax: float, step: float, dwell: float, power: float):
+    def rf_start_sweep(self, 
+                       fmin: Union[float, int], 
+                       fmax: Union[float, int], 
+                       step: Union[float, int], 
+                       dwell: Union[float, int], 
+                       power: Union[float, int]):
         '''Start a frequency sweep using the swept generator.
 
         Parameters:
@@ -165,8 +163,6 @@ TESTSET:
            * dwell: Time to wait for each step (in ms)
            * power: power used by the generator (in dBm)
         '''
-
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
 
         assert isinstance(fmin, float) or isinstance(fmin, int)
         assert isinstance(fmax, float) or isinstance(fmax, int)
@@ -180,11 +176,10 @@ TESTSET:
         assert fmin < fmax
         assert step < (fmax - fmin)
 
-        self.filehandle.write('RfStartSweep\t{fmin}, {fmax}, {step}, {dwell}, {power};\n'
-                              .format(fmin=fmin, fmax=fmax, step=step, dwell=dwell, power=power))
-        self.instruction_idx += 1
+        self.operations.append(RecipeOp('RfStartSweep',
+                                        [fmin, fmax, step, dwell, power]))
 
-    def rf_cw(self, status: bool, freq: float, power: float):
+    def rf_cw(self, status: bool, freq: Union[float, int], power: Union[float, int]):
         '''Switch the swept generator on or off using a fixed frequency.
 
         Parameters:
@@ -193,8 +188,6 @@ TESTSET:
            * power: power used by the generator (in dBm)
         '''
 
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
-
         assert isinstance(status, bool)
         assert isinstance(freq, float) or isinstance(freq, int)
         assert isinstance(power, float) or isinstance(power, int)
@@ -202,42 +195,14 @@ TESTSET:
         assert freq > 0.0
 
         status_str = {True: 'ON', False: 'OFF'}
-        self.filehandle.write('RfCw\t{status}, {freq}, {power};\n'
-                              .format(status=status_str[status], freq=freq, power=power))
+        self.operations.append(RecipeOp('RfCw', [status_str[status], freq, power]))
 
-    def wait(self, time: float):
+
+    def wait(self, time: Union[float, int]):
         'Wait for the specified time (in seconds).'
-
-        assert self.filehandle, ERRMSG_FILEHANDLE_NOT_SET
 
         assert isinstance(time, float) or isinstance(time, int)
 
         assert time >= 0.0
 
-        self.filehandle.write('Wait\t{0};\n'.format(time))
-        self.instruction_idx += 1
-
-
-class open_recipe:
-    '''Create a new recipe file and write commands in it.
-
-    This class wraps a ``RecipeFile`` class, and it is meant to
-    be used within a ``with`` block, like in the following
-    example::
-
-        with RecipeFile('out.txt') as f:
-            f.record_start(10.0)
-            f.record_stop()
-
-        # Now file 'out.txt' is ready to be used.
-    '''
-
-    def __init__(self, file_name: str):
-        self.recipe_file = RecipeFile(file_name)
-
-    def __enter__(self):
-        self.recipe_file.create_file()
-        return self.recipe_file
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.recipe_file.close()
+        self.operations.append(RecipeOp('Wait', [time]))
