@@ -31,7 +31,7 @@ Example
 The library is extremely easy to use. It implements a number of checks on the parameters
 passed to the commands to be put in the recipe file (e.g., it forbids negative temperatures).
 
-The following is a minimal working example which shows how the library should be used::
+The following is a minimal working example which shows how the library should be used:
 
 .. code-block:: python
 
@@ -79,7 +79,7 @@ After the execution of the script, file ``recipe.txt`` will contain the followin
 
 It is possible to record additional comments in the file. A smart way to do this is to
 include the source code of the Python file used to generate the program in the recipe
-itself::
+itself:
 
 .. code-block:: python
 
