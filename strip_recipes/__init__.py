@@ -37,27 +37,31 @@ class RecipeFile:
 
         self.operations = []  # type: List[RecipeOp]
 
-    def write_to_file(self, file_obj, comment=''):
+    def write_to_file(self, file_obj, comment_lines=None, source_script=None):
         'Create the text file and set it up.'
 
         now = datetime.utcnow()
-        comment_lines = []
-        if comment != '':
-            comment_lines += ['# BEGIN_COMMENT', comment, '# END_COMMENT']
+        comments = []
+        if comment_lines and len(comment_lines) > 0:
+            comments = [''] + ['# ' + x for x in comment_lines] + ['']
 
-        file_obj.write('''
-# generation_time = "{date}"
+        source_script_lines = []
+        if source_script and source_script != '':
+            source_script_lines = ['# BEGIN_SOURCE', source_script, '# END_SOURCE']
+
+        file_obj.write('''# generation_time = "{date}"
 # num_of_operations = {num}
 # wait_duration_sec = {wait_time}
-
 {comment}
+{source_script}
 
 TESTSET:
 '''.format(date=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
            num=len(self.operations),
            wait_time=sum([x.args[0] for x in self.operations
                           if x.operation.upper() == 'WAIT']),
-           comment='\n'.join(comment_lines)))
+           comment='\n'.join(comments),
+           source_script='\n'.join(source_script_lines)))
 
         for cur_op in self.operations:
             file_obj.write('{op} {args};\n'
