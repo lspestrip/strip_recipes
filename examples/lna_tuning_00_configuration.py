@@ -12,18 +12,7 @@ ADC_OFFSET = 0 # ADU
 
 
 def main(args):
-	if len(args) > 1:
-		print('''You cannot specify more than one command line parameter.
-If this parameter is present, it will be interpreted as the
-number of the polarimeter to be tested.
-''')
-
-	if len(args) == 1:
-		pol_number = int(args[0])
-	else:
-		pol_number = int(input('Enter the number of the polarimeter being tested: '))
-		
-	base_file_name = 'pol{0:02d}_lna_tuning_00_setup'.format(pol_number)
+	base_file_name = 'pol_lna_tuning_00_setup'
 	recipe_file_name = base_file_name + '.recipe'
 	
 	recipe = RecipeFile()
@@ -56,8 +45,7 @@ number of the polarimeter to be tested.
 
 	# Save the recipe and include this script in the comments
 	with open(recipe_file_name, "wt") as f:
-		recipe.write_to_file(f, comment_lines=['polarimeter = {0}'.format(pol_number)],
-		                     source_script=''.join(this_script))
+		recipe.write_to_file(f, source_script=''.join(this_script))
 		
 	print('Recipe written to file "{0}"'.format(recipe_file_name))
 	
