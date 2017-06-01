@@ -77,9 +77,13 @@ After the execution of the script, file ``recipe.txt`` will contain the followin
     Sbs OFF;
     RecordStop ;
 
-It is possible to record additional comments in the file. A smart way to do this is to
-include the source code of the Python file used to generate the program in the recipe
-itself:
+It is possible to record additional comments in the file, using the keyword
+`comment_lines` when calling `RecipeFile.write_to_file`. The parameter
+accepts a list of strings: each one will be saved at the beginning of the
+recipe file, prepended by an hash character (`#`).
+
+It is easy to embed the source code of the Python file used to generate the
+program in the recipe itself using the keyword `source_script`:
 
 .. code-block:: python
 
@@ -87,5 +91,4 @@ itself:
         this_script = f.readlines()
 
     with open('recipe.txt', 'wt') as f:
-        recipe.write_to_file(f, comment=''.join(this_script))
-
+        recipe.write_to_file(f, source_script=''.join(this_script))
