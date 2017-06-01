@@ -122,7 +122,20 @@ TESTSET:
         self.operations.append(RecipeOp('RecordStop', []))
 
     def bias_set(self, target: str, value: Union[float, int]):
-        '''Set a bias to some value.'''
+        '''Set a bias to some value.
+
+        The biases currently accepted by the program are the following, together with the
+        measure unit to be used with "value" (case is ignored):
+        * "HA1_Vd", …, "HB3_Vd": HEMT drain voltage [mV]
+        * "HA1_Id", …, "HB3_Id": HEMT drain current [mA]
+        * "HA1_Vg", …, "HB3_Vg": HEMT gate voltage [mV]
+        * "HA3bis_Vg", "HB3bis_Vg": HEMT #3 second gate voltage [mV]
+        * "PSA1_Vr", …, "PSB2_Vr": Reverse bias of the PH/SW diode [mV]
+        * "PSA1_If", …, "PSB2_If": Direct current of the PH/SW diode [mA]
+        * "Q1_bias", …, "Q2_bias": Bias voltage of the detector diode, from 0 to 4095 [ADU]
+        * "Q1_offset", …, "Q2_offset": Preamplifier bias offset, from 0 to 4095 [ADU]
+        * "Q1_gain", …. "Q2_gain": Preamplifier gain (not implemented), from 0 to 255 [ADU]
+        '''
 
         assert isinstance(target, str)
         assert isinstance(value, int) or isinstance(value, float)
