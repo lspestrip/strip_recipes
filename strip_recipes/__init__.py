@@ -165,11 +165,11 @@ TESTSET:
 
         self.operations.append(RecipeOp('PidSet', [target, temperature]))
 
-    def rf_start_sweep(self, 
-                       fmin: Union[float, int], 
-                       fmax: Union[float, int], 
-                       step: Union[float, int], 
-                       dwell: Union[float, int], 
+    def rf_start_sweep(self,
+                       fmin: Union[float, int],
+                       fmax: Union[float, int],
+                       step: Union[float, int],
+                       dwell: Union[float, int],
                        power: Union[float, int]):
         '''Start a frequency sweep using the swept generator.
 
