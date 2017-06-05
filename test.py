@@ -24,5 +24,5 @@ with open(__file__, 'rt') as f:
     this_script = f.readlines()
 
 with open('recipe.txt', 'wt') as f:
-    recipe.write_to_file(f, comment=''.join(this_script))
+    recipe.write_to_file(f, source_script=''.join(this_script))
     
