@@ -37,6 +37,15 @@ class RecipeFile:
 
         self.operations = []  # type: List[RecipeOp]
 
+    def calculate_wait_time(self):
+        '''Return the number of seconds the script will wait.
+
+        The number returned by this method is a good guess of the overall time
+        required by the recipe to complete.'''
+
+        return sum([x.args[0] for x in self.operations
+                    if x.operation.upper() == 'WAIT'])
+
     def write_to_file(self, file_obj, comment_lines=None, source_script=None):
         'Create the text file and set it up.'
 
@@ -58,8 +67,7 @@ class RecipeFile:
 TESTSET:
 '''.format(date=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
            num=len(self.operations),
-           wait_time=sum([x.args[0] for x in self.operations
-                          if x.operation.upper() == 'WAIT']),
+           wait_time=self.calculate_wait_time(),
            comment='\n'.join(comments),
            source_script='\n'.join(source_script_lines)))
 
